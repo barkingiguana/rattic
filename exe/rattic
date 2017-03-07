@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'rattic'
+
+Rattic::Cli.run(ARGV)
