@@ -5,6 +5,7 @@ require 'rattic/client'
 require 'rattic/cli'
 require 'rattic/set'
 require 'rattic/list'
+require 'json'
 
 module Rattic
 end

@@ -52,7 +52,19 @@ class Credential
   end
 
   def url
-    "#{client.base_url}cred/default/#{id}/"
+    "#{client.base_url}#{path}"
+  end
+
+  def path
+    "/cred/detail/#{id}/"
+  end
+
+  def to_json
+    client.visit("/api/v1/cred/#{id}/?format=json").body
+  end
+
+  def to_hash
+    JSON.parse to_json
   end
 
   def sort_key

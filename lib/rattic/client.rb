@@ -22,11 +22,16 @@ module Rattic
     end
 
     def log_in username, password
-      agent.get base_url
+      visit '/'
       login_form = agent.page.form_with action: '/account/login/?next='
       login_form.field_with(:name => "auth-username").value = username
       login_form.field_with(:name => "auth-password").value = password
       agent.submit login_form
+    end
+
+    def visit path
+      url = "#{base_url}#{path}"
+      agent.get url
     end
 
     def list options
@@ -34,7 +39,7 @@ module Rattic
     end
 
     def credentials
-      agent.get "#{base_url}cred/list-by-special/all/sort-ascending-by-id/"
+      visit "/cred/list-by-special/all/sort-ascending-by-id/"
       credentials = []
       page = 0
       loop do
