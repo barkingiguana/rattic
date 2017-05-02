@@ -7,6 +7,10 @@ module Rattic
     end
 
     class Options < Struct.new :argv
+      DEFAULT_OPTIONS = {
+        command: 'set',
+      }
+
       def for_client
         {
           base_url: getopts[:base_url],
@@ -24,8 +28,13 @@ module Rattic
 
       def for_command
         {
-          check_mode: getopts[:check_mode]
+          check_mode: getopts[:check_mode],
+          input: ARGF
         }
+      end
+
+      def command
+        getopts[:command]
       end
 
       private
@@ -35,7 +44,7 @@ module Rattic
       end
 
       def parse
-        options = {}
+        options = DEFAULT_OPTIONS.dup
         OptionParser.new do |opts|
           opts.banner = "Usage: #{File.basename($0)} [options]"
 
@@ -59,6 +68,10 @@ module Rattic
             options[:check_mode] = v
           end
 
+          opts.on("-l", "--list", "List credentials") do |v|
+            options[:command] = 'list'
+          end
+
           opts.on("-x", "--proxy proxy", "Proxy to access Rattic") do |v|
             options[:proxy] = v
           end
@@ -78,19 +91,7 @@ module Rattic
 
       def run
         client.log_in options.for_log_in[:username], options.for_log_in[:password]
-        ARGF.each_line do |line|
-          next if line.strip == ''
-          title, group, env = *line.split(/,/, 3).map(&:strip)
-          if check_mode?
-            puts "title: #{title}, group: #{group}, env: #{env}, exists: #{client.credential_defined_for?(title, group, env)}"
-          else
-            client.ensure_credential_exists title, group, env
-          end
-        end
-      end
-
-      def check_mode?
-        options.for_command[:check_mode]
+        client.public_send(options.command, options.for_command).run
       end
     end
   end

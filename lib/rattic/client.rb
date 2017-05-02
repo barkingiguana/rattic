@@ -29,42 +29,33 @@ module Rattic
       agent.submit login_form
     end
 
-    def ensure_credential_exists title, user, group
-      return if credential_defined_for? title, user, group
-      agent.get base_url
-      current_page.link_with(text: 'Add New').click
-      creds_form = current_page.form_with(action: '/cred/add/')
-      creds_form.field_with(name: 'title').value = title
-      creds_form.field_with(name: 'username').value = user
-      creds_form.field_with(name: 'password').value = SecureRandom.uuid
-      creds_form.field_with(name: 'group').option_with(text: group).click
-      agent.submit creds_form
+    def list options
+      List.new self, options
     end
 
-    def credential_defined_for? title, user, group
-      visible_credentials.any? do |c|
-        c.title == title && c.user == user && c.group == group
-      end
-    end
-
-    private
-
-    def visible_credentials
-      @visible_credentials ||= fetch_credentials
-    end
-
-    def fetch_credentials
+    def credentials
       agent.get base_url
       credentials = []
       loop do
         credentials += read_credentials
         next_link = current_page.link_with(text: 'Next')
         break if next_link.node.parent['class'] =~ /disabled/
+        sleep 0.1 # Don't melt Rattic
         next_link.click
       end
       credentials.sort!
       credentials
     end
+
+    def set options
+      Set.new self, options
+    end
+
+    def with_agent
+      yield agent
+    end
+
+    private
 
     def read_credentials
       el = current_page.link_with(text: 'Add New').node
@@ -72,9 +63,8 @@ module Rattic
       credentials = []
       el.search('tbody tr').each do |row|
         title, user, group = row.search('td')[1,3].to_a.map { |e| e.text.to_s.strip }
-        credentials << Credential.new(title, user, group)
+        credentials << Credential.new(self, title, user, group)
       end
-      sleep 0.5 # Don't melt Rattic
       credentials
     end
 
