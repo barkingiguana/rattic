@@ -34,9 +34,11 @@ module Rattic
     end
 
     def credentials
-      agent.get base_url
+      agent.get "#{base_url}cred/list-by-special/all/sort-ascending-by-id/"
       credentials = []
+      page = 0
       loop do
+        page += 1
         credentials += read_credentials
         next_link = current_page.link_with(text: 'Next')
         break if next_link.node.parent['class'] =~ /disabled/
@@ -63,7 +65,8 @@ module Rattic
       credentials = []
       el.search('tbody tr').each do |row|
         title, user, group = row.search('td')[1,3].to_a.map { |e| e.text.to_s.strip }
-        credentials << Credential.new(self, title, user, group)
+        id = row.search('td')[1].search('a')[0]['href'].split(/\//)[-1]
+        credentials << Credential.new(self, title, user, group, id)
       end
       credentials
     end

@@ -1,10 +1,21 @@
-class Credential < Struct.new :client, :title, :user, :group
+class Credential
+  attr_accessor :client, :title, :user, :group, :id
+
+  def initialize client, title, user, group, id = nil
+    self.client = client
+    self.title = title
+    self.user = user
+    self.group = group
+    self.id = id
+  end
+
   def <=> other
     sort_key <=> other.sort_key
   end
   include Comparable
 
   def add value
+    raise "Already added!" unless id.nil?
     client.with_agent do |agent|
       agent.get base_url
       agent.page.link_with(text: 'Add New').click
@@ -37,10 +48,14 @@ class Credential < Struct.new :client, :title, :user, :group
   end
 
   def to_s
-    "Credential #{client.base_url},#{title},#{user},#{group}"
+    "Credential #{url} | #{group} / #{title} / #{user}"
+  end
+
+  def url
+    "#{client.base_url}cred/default/#{id}/"
   end
 
   def sort_key
-    [ title, user, group ].join('---')
+    [ group, title, user ].join('---')
   end
 end
